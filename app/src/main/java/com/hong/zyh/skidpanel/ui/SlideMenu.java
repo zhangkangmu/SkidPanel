@@ -2,6 +2,7 @@ package com.hong.zyh.skidpanel.ui;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +26,9 @@ public class SlideMenu extends ViewGroup {
 
     private float downX;
     private float moveX;
+    public static final int MAIN_STATE = 0;
+    public static final int MENU_STATE = 1;
+    private int currentState = MAIN_STATE; // 当前模式
 
     public SlideMenu(Context context) {
         super(context);
@@ -85,18 +89,25 @@ public class SlideMenu extends ViewGroup {
                 downX = event.getX();
                 break;
             case MotionEvent.ACTION_MOVE:
+                Log.d("ACTION_MOVEX",""+getScrollX());
+                Log.d("ACTION_MOVEY",""+getScrollY());
+                Log.d("getMeasuredWidth",""+getChildAt(0).getMeasuredWidth());
+
                 moveX = event.getX();
                 // 将要发生的偏移量/变化量
                 int scrollX = (int) (downX - moveX);
 
                 // 计算将要滚动到的位置, 判断是否会超出去, 超出去了.不执行scrollBy
-                // getScrollX() 当前滚动到的位置，newScrollPosition则是目前位置
+                // getScrollX() 当前滚动到的位置（是一个负数），newScrollPosition则是目前位置
                 int newScrollPosition = getScrollX() + scrollX;
                 // 计算将要滚动到的位置, 判断是否会超出去, 超出去了.不执行scrollBy
 
+                Log.d("(newScrollPosition < -getChildAt(0).getMeasuredWidth())",
+                        ""+(newScrollPosition < -getChildAt(0).getMeasuredWidth()));
                 //可以想象是没有滑动的时候，那么隐藏的部分就是-240，通过判断当前的位置和-240相比，如果在-240左边也就是小于-240了，这种情况就是拉的太出来了，所以应该设为-240,0坐标
                 if (newScrollPosition < -getChildAt(0).getMeasuredWidth()){ // 限定左边界
                     // 也就是< -240
+                    //这时候是向右滑动到最右方
                     scrollTo(-getChildAt(0).getMeasuredWidth(), 0);
                 } else if (newScrollPosition > 0){ // 限定右边界
                     // > 0
@@ -108,7 +119,18 @@ public class SlideMenu extends ViewGroup {
                 downX = moveX;
                 break;
             case MotionEvent.ACTION_UP:
+                // 根据当前滚动到的位置, 和左面板的一半进行比较
+                int leftCenter = (int) (-getChildAt(0).getMeasuredWidth() / 2.0f);
 
+                if (getScrollX() < leftCenter) {
+                    // 打开, 切换成菜单面板
+                    currentState = MENU_STATE;
+                    updateCurrentContent();
+                } else {
+                    // 关闭, 切换成主面板
+                    currentState = MAIN_STATE;
+                    updateCurrentContent();
+                }
                 break;
             default:
 
@@ -116,4 +138,19 @@ public class SlideMenu extends ViewGroup {
         }
         return true;
     }
+
+    /**
+     * 根据当前的状态, 执行 关闭/开启 的动画
+     */
+    private void updateCurrentContent() {
+        // 平滑滚动
+        if(currentState == MENU_STATE){
+            // 打开菜单
+            scrollTo(-getChildAt(0).getMeasuredWidth(), 0);
+        }else{
+            // 恢复主界面
+            scrollTo(0, 0);
+        }
+    }
+
 }
