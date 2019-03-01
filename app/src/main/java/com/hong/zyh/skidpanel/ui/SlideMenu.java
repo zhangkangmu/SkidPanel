@@ -198,4 +198,20 @@ public class SlideMenu extends ViewGroup {
             invalidate(); // 重绘界面-> drawChild() -> computeScroll();循环，一定要这样书写，相当于一针一针地绘制
         }
     }
+    public void open(){
+        currentState = MENU_STATE;
+        updateCurrentContent();
+    }
+    public void close(){
+        currentState = MAIN_STATE;
+        updateCurrentContent();
+    }
+
+    public void switchState(){
+        if(currentState == MAIN_STATE){
+            open();
+        }else {
+            close();
+        }
+    }
 }

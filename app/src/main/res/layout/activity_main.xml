@@ -5,6 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".MainActivity">
 <com.hong.zyh.skidpanel.ui.SlideMenu
+    android:id="@+id/slide_menu"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
