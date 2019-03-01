@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Scroller;
 
 /**
  * Created by shuaihong on 2019/3/1.
@@ -29,17 +30,27 @@ public class SlideMenu extends ViewGroup {
     public static final int MAIN_STATE = 0;
     public static final int MENU_STATE = 1;
     private int currentState = MAIN_STATE; // 当前模式
+    //滚动数值模拟器，用于侧滑动画
+    private Scroller scroller;
 
     public SlideMenu(Context context) {
         super(context);
+        init();
     }
 
     public SlideMenu(Context context, AttributeSet attrs) {
         super(context, attrs);
+        init();
     }
 
     public SlideMenu(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        init();
+    }
+
+    private void init() {
+        // 初始化滚动器, 数值模拟器
+        scroller = new Scroller(getContext());
     }
 
     /**
@@ -143,14 +154,48 @@ public class SlideMenu extends ViewGroup {
      * 根据当前的状态, 执行 关闭/开启 的动画
      */
     private void updateCurrentContent() {
+        //getScrollX()为负数
+        int startX = getScrollX();
+        int dx = 0;
+
         // 平滑滚动
         if(currentState == MENU_STATE){
             // 打开菜单
-            scrollTo(-getChildAt(0).getMeasuredWidth(), 0);
+            //scrollTo(-getChildAt(0).getMeasuredWidth(), 0);
+
+            dx = -getChildAt(0).getMeasuredWidth() - startX;
         }else{
             // 恢复主界面
-            scrollTo(0, 0);
+            //scrollTo(0, 0);
+
+            dx = 0 - startX;
         }
+        // startX: 开始的x值
+        // startY: 开始的y值
+        // dx: 将要发生的水平变化量. 移动的x距离
+        // dy: 将要发生的竖直变化量. 移动的y距离
+        // duration : 数据模拟持续的时长
+
+        // 1. 开始平滑的数据模拟,这只是第一步，还不行执行动画，还得重写computeScroll（）方法
+        int duration = Math.abs(dx * 2); // 0 -> 1200
+        scroller.startScroll(startX, 0, dx, 0, duration);
+
+        // 重绘界面 -> drawChild() -> computeScroll();(会执行这些方法)，一定要加上这个
+        invalidate();
     }
 
+    //2. 维持动画的继续
+    @Override
+    public void computeScroll() {
+        super.computeScroll();
+        if(scroller.computeScrollOffset()){ // 直到duration事件以后, 结束
+            // true, 动画还没有结束，500之内为true，超过500毫秒是false
+            // 获取当前模拟的数据, 也就是要滚动到的位置
+            int currX = scroller.getCurrX();
+            System.out.println("currX: " + currX);
+            scrollTo(currX, 0); // 滚过去
+
+            invalidate(); // 重绘界面-> drawChild() -> computeScroll();循环，一定要这样书写，相当于一针一针地绘制
+        }
+    }
 }
